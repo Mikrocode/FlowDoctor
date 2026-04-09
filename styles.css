@@ -225,6 +225,10 @@ select {
   background: linear-gradient(145deg, #f97316, #b45309);
 }
 
+.result-critical.status-good {
+  background: linear-gradient(145deg, #16a34a, #166534);
+}
+
 .badge {
   display: inline-flex;
   padding: 4px 10px;

@@ -50,6 +50,12 @@ for (const row of toggleRows) {
   });
 }
 
+function riskBand(score, badAt, criticalAt) {
+  if (score >= criticalAt) return 'CRITICAL';
+  if (score >= badAt) return 'BAD';
+  return 'OK';
+}
+
 function diagnose() {
   const metrics = {
     cycle: Number(document.getElementById('cycle').value),
@@ -69,7 +75,10 @@ function diagnose() {
         metrics.wip / Math.max(metrics.team, 1) +
         (metrics.pressure === 'high' ? 1.8 : 0) +
         (metrics.stories === 'yes' ? 1.4 : 0),
-      severity: () => (metrics.wip >= 16 || metrics.wip / metrics.team > 1.5 ? 'CRITICAL' : 'BAD'),
+      severity: (score) => {
+        if (metrics.wip <= metrics.team && metrics.wip / metrics.team <= 0.9 && metrics.stories === 'no') return 'OK';
+        return riskBand(score, 2.8, 4.2);
+      },
       problem: 'Too much parallel work',
       sub: 'You’re starting everything. Finishing nothing.',
       root: 'Root cause: WIP exceeds team capacity and drives context switching.',
@@ -87,7 +96,10 @@ function diagnose() {
         metrics.blocked / 20 +
         (metrics.stories === 'yes' ? 2.2 : 0) +
         (metrics.dependencies === 'High' ? 1.2 : 0),
-      severity: () => (metrics.cycle >= 12 || metrics.blocked >= 45 ? 'CRITICAL' : 'BAD'),
+      severity: (score) => {
+        if (metrics.cycle <= 4 && metrics.blocked <= 12 && metrics.stories === 'no' && metrics.dependencies === 'Low') return 'OK';
+        return riskBand(score, 3.2, 5);
+      },
       problem: 'Stories are too large and spill over',
       sub: 'Work carries across sprints because slices are too big.',
       root: 'Root cause: oversized stories and frequent blockers from dependencies.',
@@ -101,7 +113,10 @@ function diagnose() {
     {
       key: 'quality',
       score: metrics.bugs / 4 + metrics.blocked / 30 + (metrics.pressure === 'high' ? 1.4 : 0),
-      severity: () => (metrics.bugs >= 20 ? 'CRITICAL' : 'BAD'),
+      severity: (score) => {
+        if (metrics.bugs <= 5 && metrics.blocked <= 10 && metrics.pressure === 'low') return 'OK';
+        return riskBand(score, 2.9, 4.4);
+      },
       problem: 'Quality debt is flooding delivery',
       sub: 'Defects are consuming capacity every sprint.',
       root: 'Root cause: high rework load and unstable handoffs.',
@@ -118,7 +133,10 @@ function diagnose() {
         (metrics.dependencies === 'High' ? 3.5 : metrics.dependencies === 'Medium' ? 2 : 0.8) +
         metrics.blocked / 18 +
         (metrics.pressure === 'high' ? 1.1 : 0),
-      severity: () => (metrics.dependencies === 'High' || metrics.blocked >= 50 ? 'CRITICAL' : 'BAD'),
+      severity: (score) => {
+        if (metrics.dependencies === 'Low' && metrics.blocked <= 10 && metrics.pressure === 'low') return 'OK';
+        return riskBand(score, 3, 4.8);
+      },
       problem: 'Dependency bottlenecks are stalling flow',
       sub: 'External teams and approvals are throttling throughput.',
       root: 'Root cause: weak dependency ownership and late integration.',
@@ -131,28 +149,66 @@ function diagnose() {
     }
   ];
 
-  const top = signals.sort((a, b) => b.score - a.score)[0];
-  const severity = top.severity();
+  const scored = signals.map((signal) => ({ ...signal, severity: signal.severity(signal.score) }));
+  const top = [...scored].sort((a, b) => b.score - a.score)[0];
 
-  document.getElementById('severity').textContent = severity;
-  document.getElementById('main-problem').textContent = top.problem;
-  document.getElementById('problem-sub').textContent = top.sub;
-  document.getElementById('root-cause').textContent = top.root;
+  const averageRisk = scored.reduce((sum, signal) => sum + signal.score, 0) / scored.length;
+  const hasAnyBadSignal = scored.some((signal) => signal.severity !== 'OK');
 
-  document.getElementById('action-1a').textContent = top.actions[0];
-  document.getElementById('action-1b').textContent = top.actions[1];
-  document.getElementById('action-2a').textContent = top.actions[2];
-  document.getElementById('action-2b').textContent = 'Run a 15-minute daily triage until stable.';
-  document.getElementById('action-3a').textContent = 'Set a weekly improvement experiment and KPI owner.';
-  document.getElementById('action-3b').textContent = 'Review outcome every Friday and tighten limits.';
+  const healthyScenario = {
+    severity: 'OK',
+    problem: 'Delivery flow looks healthy',
+    sub: 'Signals are in a stable range. Keep the system balanced.',
+    root: 'Root cause: none critical right now. The team is operating within healthy limits.',
+    actions: [
+      'Keep WIP and blockers visible every day',
+      'Protect story slicing and acceptance quality',
+      'Run one small weekly improvement experiment',
+      'Predictability stays high when these guardrails are maintained'
+    ]
+  };
 
-  const targetCycle = Math.max(2, Math.round(metrics.cycle * 0.55));
+  const diagnosis = !hasAnyBadSignal || averageRisk < 2.2 ? healthyScenario : {
+    severity: top.severity,
+    problem: top.problem,
+    sub: top.sub,
+    root: top.root,
+    actions: top.actions
+  };
+
+  document.getElementById('severity').textContent = diagnosis.severity;
+  document.getElementById('main-problem').textContent = diagnosis.problem;
+  document.getElementById('problem-sub').textContent = diagnosis.sub;
+  document.getElementById('root-cause').textContent = diagnosis.root;
+
+  document.getElementById('action-1a').textContent = diagnosis.actions[0];
+  document.getElementById('action-1b').textContent = diagnosis.actions[1];
+  document.getElementById('action-2a').textContent = diagnosis.actions[2];
+  document.getElementById('action-2b').textContent = diagnosis.severity === 'OK'
+    ? 'Use daily triage only for exceptions and risks.'
+    : 'Run a 15-minute daily triage until stable.';
+  document.getElementById('action-3a').textContent = diagnosis.severity === 'OK'
+    ? 'Track one leading indicator (cycle time or blocked %).'
+    : 'Set a weekly improvement experiment and KPI owner.';
+  document.getElementById('action-3b').textContent = diagnosis.severity === 'OK'
+    ? 'Review weekly and intervene early when drift appears.'
+    : 'Review outcome every Friday and tighten limits.';
+
+  const targetCycle = diagnosis.severity === 'OK'
+    ? Math.max(2, Math.round(metrics.cycle * 0.95))
+    : Math.max(2, Math.round(metrics.cycle * 0.55));
   document.getElementById('impact-cycle').innerHTML = `<strong>Cycle time:</strong> ${metrics.cycle}d → ~${targetCycle}d`;
-  document.getElementById('impact-predictability').innerHTML = `<strong>Predictability:</strong> ${top.actions[3]}`;
+  document.getElementById('impact-predictability').innerHTML = `<strong>Predictability:</strong> ${diagnosis.actions[3]}`;
 
   const resultNode = document.getElementById('result-critical');
-  resultNode.classList.remove('status-bad', 'status-critical');
-  resultNode.classList.add(severity === 'CRITICAL' ? 'status-critical' : 'status-bad');
+  resultNode.classList.remove('status-good', 'status-bad', 'status-critical');
+  if (diagnosis.severity === 'CRITICAL') {
+    resultNode.classList.add('status-critical');
+  } else if (diagnosis.severity === 'BAD') {
+    resultNode.classList.add('status-bad');
+  } else {
+    resultNode.classList.add('status-good');
+  }
 }
 
 document.getElementById('diagnose').addEventListener('click', diagnose);
