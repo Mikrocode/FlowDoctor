@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Flow Doctor — Emergency Room for Broken Delivery</title>
+    <meta
+      name="description"
+      content="Flow Doctor is the Emergency Room for Broken Delivery. A fast diagnostic tool for software teams."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="texture" aria-hidden="true"></div>
+    <main class="page">
+      <header class="hero">
+        <p class="eyebrow">Flow Doctor</p>
+        <h1>Emergency Room for Broken Delivery</h1>
+        <p class="subhead">Takes 30 seconds. No bullshit. Just fixes.</p>
+      </header>
+
+      <section class="triage-layout" aria-label="Flow Doctor triage interface">
+        <article class="card input-card">
+          <div class="card-header">
+            <h2>What’s broken?</h2>
+            <p>Signal check. Fast triage.</p>
+          </div>
+
+          <form class="diagnostic-form" onsubmit="return false;">
+            <label>
+              <div class="label-row">
+                <span>Cycle Time (days)</span>
+                <strong id="cycle-value">10</strong>
+              </div>
+              <input id="cycle" type="range" min="1" max="20" value="10" data-bands="low:OK,mid:Bad,high:Critical" />
+              <small id="cycle-band" class="band">Bad</small>
+            </label>
+
+            <label>
+              <div class="label-row">
+                <span>Work in Progress (WIP)</span>
+                <strong id="wip-value">12</strong>
+              </div>
+              <input id="wip" type="range" min="1" max="30" value="12" data-bands="low:OK,mid:Bad,high:Critical" />
+              <small id="wip-band" class="band critical">Critical</small>
+            </label>
+
+            <label>
+              <div class="label-row">
+                <span>% Blocked Work</span>
+                <strong id="blocked-value">40%</strong>
+              </div>
+              <input id="blocked" type="range" min="0" max="100" value="40" data-suffix="%" data-bands="low:OK,mid:Bad,high:Critical" />
+              <small id="blocked-band" class="band bad">Bad</small>
+            </label>
+
+            <label>
+              <div class="label-row">
+                <span>Bugs per Sprint</span>
+                <strong id="bugs-value">16</strong>
+              </div>
+              <input id="bugs" type="range" min="0" max="40" value="16" data-bands="low:OK,mid:Bad,high:Critical" />
+              <small id="bugs-band" class="band bad">Bad</small>
+            </label>
+
+            <label>
+              <div class="label-row">
+                <span>Team Size</span>
+                <strong id="team-value">8</strong>
+              </div>
+              <input id="team" type="range" min="2" max="20" value="8" data-bands="low:OK,mid:OK,high:Bad" />
+              <small id="team-band" class="band">OK</small>
+            </label>
+
+            <label>
+              <span>Dependencies</span>
+              <select>
+                <option>Low</option>
+                <option selected>Medium</option>
+                <option>High</option>
+              </select>
+            </label>
+
+            <label>
+              <span>Stories Spill Over</span>
+              <div class="switch-row">
+                <button type="button" class="pill active">Yes</button>
+                <button type="button" class="pill">No</button>
+              </div>
+            </label>
+
+            <label>
+              <span>Stakeholder Pressure</span>
+              <div class="switch-row">
+                <button type="button" class="pill">Low</button>
+                <button type="button" class="pill active critical">High</button>
+              </div>
+            </label>
+
+            <button class="btn-primary" type="button">Diagnose</button>
+          </form>
+        </article>
+
+        <article class="results" aria-live="polite">
+          <section class="result-critical">
+            <span class="badge">CRITICAL</span>
+            <h3>Main Problem</h3>
+            <p class="problem">Too much parallel work</p>
+            <p class="problem-sub">You’re starting everything. Finishing nothing.</p>
+            <p class="root">Root cause: Too much WIP across the system.</p>
+          </section>
+
+          <section class="actions">
+            <article class="action primary">
+              <span class="start-here">Start here</span>
+              <h4>Action 1</h4>
+              <p>Limit WIP to 3 per dev</p>
+              <p>Stop starting, start finishing</p>
+            </article>
+            <article class="action">
+              <h4>Action 2</h4>
+              <p>Slice stories under 2 days</p>
+              <p>Force acceptance criteria</p>
+            </article>
+            <article class="action">
+              <h4>Action 3</h4>
+              <p>Kill hidden dependencies</p>
+              <p>Weekly cross-team sync</p>
+            </article>
+          </section>
+
+          <section class="impact">
+            <h4>Expected Impact</h4>
+            <p><strong>Cycle time:</strong> 10d → ~5d</p>
+            <p><strong>Predictability:</strong> restored in 2 sprints</p>
+          </section>
+        </article>
+      </section>
+    </main>
+
+    <script src="script.js"></script>
+  </body>
+</html>
