@@ -62,6 +62,13 @@ function severityRank(severity) {
   return 0;
 }
 
+
+function worstSeverity(severities) {
+  if (severities.includes('CRITICAL')) return 'CRITICAL';
+  if (severities.includes('BAD')) return 'BAD';
+  return 'OK';
+}
+
 function metricStatus(value, min, max) {
   const ratio = (value - min) / (max - min);
   if (ratio < 0.35) return 'OK';
@@ -193,8 +200,10 @@ function diagnose() {
     ]
   };
 
+  const worstMetricSeverity = worstSeverity(metricSeverities);
+
   const diagnosis = !hasAnyBadSignal ? healthyScenario : {
-    severity: top.severity,
+    severity: top.severity === 'OK' ? worstMetricSeverity : top.severity,
     problem: top.problem,
     sub: top.sub,
     root: top.root,
@@ -202,6 +211,7 @@ function diagnose() {
   };
 
   document.getElementById('severity').textContent = diagnosis.severity;
+  document.getElementById('main-problem-label').hidden = diagnosis.severity === 'OK';
   document.getElementById('main-problem').textContent = diagnosis.problem;
   document.getElementById('problem-sub').textContent = diagnosis.sub;
   document.getElementById('root-cause').textContent = diagnosis.root;
