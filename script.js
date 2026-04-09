@@ -62,6 +62,13 @@ function severityRank(severity) {
   return 0;
 }
 
+function metricStatus(value, min, max) {
+  const ratio = (value - min) / (max - min);
+  if (ratio < 0.35) return 'OK';
+  if (ratio < 0.7) return 'BAD';
+  return 'CRITICAL';
+}
+
 function diagnose() {
   const metrics = {
     cycle: Number(document.getElementById('cycle').value),
@@ -162,7 +169,16 @@ function diagnose() {
     return b.score - a.score;
   })[0];
 
-  const hasAnyBadSignal = scored.some((signal) => signal.severity !== 'OK');
+  const metricSeverities = [
+    metricStatus(metrics.cycle, 1, 20),
+    metricStatus(metrics.wip, 1, 30),
+    metricStatus(metrics.blocked, 0, 100),
+    metricStatus(metrics.bugs, 0, 40),
+    metricStatus(metrics.team, 2, 20)
+  ];
+  const hasAnyBadSignal =
+    scored.some((signal) => signal.severity !== 'OK') ||
+    metricSeverities.some((severity) => severity !== 'OK');
 
   const healthyScenario = {
     severity: 'OK',
