@@ -191,7 +191,7 @@ function diagnose() {
     severity: 'OK',
     problem: 'Delivery flow looks healthy',
     sub: 'Signals are in a stable range. Keep the system balanced.',
-    root: 'Root cause: No critical issue right now.',
+    root: 'No critical issue right now.',
     actions: [
       'Keep WIP and blockers visible every day',
       'Protect story slicing and acceptance quality',
