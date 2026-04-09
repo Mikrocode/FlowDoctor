@@ -56,6 +56,12 @@ function riskBand(score, badAt, criticalAt) {
   return 'OK';
 }
 
+function severityRank(severity) {
+  if (severity === 'CRITICAL') return 2;
+  if (severity === 'BAD') return 1;
+  return 0;
+}
+
 function diagnose() {
   const metrics = {
     cycle: Number(document.getElementById('cycle').value),
@@ -150,9 +156,12 @@ function diagnose() {
   ];
 
   const scored = signals.map((signal) => ({ ...signal, severity: signal.severity(signal.score) }));
-  const top = [...scored].sort((a, b) => b.score - a.score)[0];
+  const top = [...scored].sort((a, b) => {
+    const severityDelta = severityRank(b.severity) - severityRank(a.severity);
+    if (severityDelta !== 0) return severityDelta;
+    return b.score - a.score;
+  })[0];
 
-  const averageRisk = scored.reduce((sum, signal) => sum + signal.score, 0) / scored.length;
   const hasAnyBadSignal = scored.some((signal) => signal.severity !== 'OK');
 
   const healthyScenario = {
@@ -168,7 +177,7 @@ function diagnose() {
     ]
   };
 
-  const diagnosis = !hasAnyBadSignal || averageRisk < 2.2 ? healthyScenario : {
+  const diagnosis = !hasAnyBadSignal ? healthyScenario : {
     severity: top.severity,
     problem: top.problem,
     sub: top.sub,
