@@ -4,11 +4,30 @@ const toggleState = {
   pressure: 'high'
 };
 
-function classify(value, min, max) {
+function parseBandConfig(input) {
+  const raw = input.dataset.bands;
+  if (!raw) return null;
+
+  const parsed = {};
+  for (const pair of raw.split(',')) {
+    const [key, value] = pair.split(':').map((part) => part?.trim());
+    if (key && value) parsed[key] = value;
+  }
+
+  return parsed;
+}
+
+function classify(value, min, max, bandConfig) {
   const ratio = (value - min) / (max - min);
-  if (ratio < 0.35) return 'OK';
-  if (ratio < 0.7) return 'Bad';
-  return 'Critical';
+  if (!bandConfig) {
+    if (ratio < 0.35) return 'OK';
+    if (ratio < 0.7) return 'Bad';
+    return 'Critical';
+  }
+
+  if (ratio < 0.35) return bandConfig.low ?? 'OK';
+  if (ratio < 0.7) return bandConfig.mid ?? 'Bad';
+  return bandConfig.high ?? 'Critical';
 }
 
 function bandClass(text) {
@@ -22,11 +41,12 @@ for (const input of ranges) {
   const valueNode = document.getElementById(`${id}-value`);
   const bandNode = document.getElementById(`${id}-band`);
   const suffix = input.dataset.suffix ?? '';
+  const bandConfig = parseBandConfig(input);
 
   const refresh = () => {
     const val = Number(input.value);
     valueNode.textContent = `${val}${suffix}`;
-    const label = classify(val, Number(input.min), Number(input.max));
+    const label = classify(val, Number(input.min), Number(input.max), bandConfig);
     bandNode.textContent = label;
     bandNode.className = bandClass(label);
   };
@@ -62,18 +82,21 @@ function severityRank(severity) {
   return 0;
 }
 
-
 function worstSeverity(severities) {
   if (severities.includes('CRITICAL')) return 'CRITICAL';
   if (severities.includes('BAD')) return 'BAD';
   return 'OK';
 }
 
-function metricStatus(value, min, max) {
-  const ratio = (value - min) / (max - min);
-  if (ratio < 0.35) return 'OK';
-  if (ratio < 0.7) return 'BAD';
-  return 'CRITICAL';
+function classifyMetricStatus(metrics) {
+  const wipPerPerson = metrics.wip / Math.max(metrics.team, 1);
+
+  return {
+    cycle: metrics.cycle <= 4 ? 'OK' : metrics.cycle <= 8 ? 'BAD' : 'CRITICAL',
+    wip: wipPerPerson <= 1.5 ? 'OK' : wipPerPerson <= 2.5 ? 'BAD' : 'CRITICAL',
+    blocked: metrics.blocked <= 10 ? 'OK' : metrics.blocked <= 20 ? 'BAD' : 'CRITICAL',
+    bugs: metrics.bugs <= 5 ? 'OK' : metrics.bugs <= 12 ? 'BAD' : 'CRITICAL'
+  };
 }
 
 function diagnose() {
@@ -88,16 +111,19 @@ function diagnose() {
     pressure: toggleState.pressure
   };
 
+  const wipPerPerson = metrics.wip / Math.max(metrics.team, 1);
+
   const signals = [
     {
       key: 'parallel',
       score:
-        metrics.wip / Math.max(metrics.team, 1) +
-        (metrics.pressure === 'high' ? 1.8 : 0) +
-        (metrics.stories === 'yes' ? 1.4 : 0),
+        wipPerPerson * 1.2 +
+        metrics.blocked / 25 +
+        (metrics.pressure === 'high' ? 1.4 : 0) +
+        (metrics.stories === 'yes' ? 1.2 : 0),
       severity: (score) => {
-        if (metrics.wip <= metrics.team && metrics.wip / metrics.team <= 0.9 && metrics.stories === 'no') return 'OK';
-        return riskBand(score, 2.8, 4.2);
+        if (wipPerPerson <= 1.5 && metrics.blocked <= 10 && metrics.stories === 'no') return 'OK';
+        return riskBand(score, 2.6, 4);
       },
       problem: 'Too much parallel work',
       sub: 'You’re starting everything. Finishing nothing.',
@@ -176,13 +202,8 @@ function diagnose() {
     return b.score - a.score;
   })[0];
 
-  const metricSeverities = [
-    metricStatus(metrics.cycle, 1, 20),
-    metricStatus(metrics.wip, 1, 30),
-    metricStatus(metrics.blocked, 0, 100),
-    metricStatus(metrics.bugs, 0, 40),
-    metricStatus(metrics.team, 2, 20)
-  ];
+  const metricStatus = classifyMetricStatus(metrics);
+  const metricSeverities = [metricStatus.cycle, metricStatus.wip, metricStatus.blocked, metricStatus.bugs];
   const hasAnyBadSignal =
     scored.some((signal) => signal.severity !== 'OK') ||
     metricSeverities.some((severity) => severity !== 'OK');
