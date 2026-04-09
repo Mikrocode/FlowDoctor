@@ -80,7 +80,7 @@
 
             <label>
               <span>Dependencies</span>
-              <select>
+              <select id="dependencies">
                 <option>Low</option>
                 <option selected>Medium</option>
                 <option>High</option>
@@ -89,56 +89,56 @@
 
             <label>
               <span>Stories Spill Over</span>
-              <div class="switch-row">
-                <button type="button" class="pill active">Yes</button>
-                <button type="button" class="pill">No</button>
+              <div class="switch-row" data-toggle="stories">
+                <button type="button" class="pill active" data-value="yes">Yes</button>
+                <button type="button" class="pill" data-value="no">No</button>
               </div>
             </label>
 
             <label>
               <span>Stakeholder Pressure</span>
-              <div class="switch-row">
-                <button type="button" class="pill">Low</button>
-                <button type="button" class="pill active critical">High</button>
+              <div class="switch-row" data-toggle="pressure">
+                <button type="button" class="pill" data-value="low">Low</button>
+                <button type="button" class="pill active critical" data-value="high">High</button>
               </div>
             </label>
 
-            <button class="btn-primary" type="button">Diagnose</button>
+            <button class="btn-primary" type="button" id="diagnose">Diagnose</button>
           </form>
         </article>
 
         <article class="results" aria-live="polite">
-          <section class="result-critical">
-            <span class="badge">CRITICAL</span>
+          <section class="result-critical" id="result-critical">
+            <span class="badge" id="severity">CRITICAL</span>
             <h3>Main Problem</h3>
-            <p class="problem">Too much parallel work</p>
-            <p class="problem-sub">You’re starting everything. Finishing nothing.</p>
-            <p class="root">Root cause: Too much WIP across the system.</p>
+            <p class="problem" id="main-problem">Too much parallel work</p>
+            <p class="problem-sub" id="problem-sub">You’re starting everything. Finishing nothing.</p>
+            <p class="root" id="root-cause">Root cause: Too much WIP across the system.</p>
           </section>
 
           <section class="actions">
             <article class="action primary">
               <span class="start-here">Start here</span>
               <h4>Action 1</h4>
-              <p>Limit WIP to 3 per dev</p>
-              <p>Stop starting, start finishing</p>
+              <p id="action-1a">Limit WIP to 3 per dev</p>
+              <p id="action-1b">Stop starting, start finishing</p>
             </article>
             <article class="action">
               <h4>Action 2</h4>
-              <p>Slice stories under 2 days</p>
-              <p>Force acceptance criteria</p>
+              <p id="action-2a">Slice stories under 2 days</p>
+              <p id="action-2b">Force acceptance criteria</p>
             </article>
             <article class="action">
               <h4>Action 3</h4>
-              <p>Kill hidden dependencies</p>
-              <p>Weekly cross-team sync</p>
+              <p id="action-3a">Kill hidden dependencies</p>
+              <p id="action-3b">Weekly cross-team sync</p>
             </article>
           </section>
 
           <section class="impact">
             <h4>Expected Impact</h4>
-            <p><strong>Cycle time:</strong> 10d → ~5d</p>
-            <p><strong>Predictability:</strong> restored in 2 sprints</p>
+            <p id="impact-cycle"><strong>Cycle time:</strong> 10d → ~5d</p>
+            <p id="impact-predictability"><strong>Predictability:</strong> restored in 2 sprints</p>
           </section>
         </article>
       </section>
